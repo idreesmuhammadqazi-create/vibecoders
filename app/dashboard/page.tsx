@@ -12,7 +12,6 @@ export default function Dashboard() {
   const router = useRouter()
   const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null)
   const [selectedFunction, setSelectedFunction] = useState<CodeFunction | null>(null)
-  const [functions, setFunctions] = useState<CodeFunction[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
@@ -35,17 +34,15 @@ export default function Dashboard() {
   const handleRepoSelect = async (repo: Repository) => {
     setSelectedRepo(repo)
     setSelectedFunction(null)
-    setFunctions([])
     setIsLoading(true)
 
     try {
       // Fetch repository files and parse code
       const response = await fetch(`/api/repos/${repo.full_name.split('/')[0]}/${repo.name}/files`)
-      const files = await response.json()
+      await response.json()
 
       // TODO: Parse files and extract functions
       // For now, we'll show a placeholder
-      setFunctions([])
     } catch (error) {
       console.error('Error fetching repo files:', error)
     } finally {
