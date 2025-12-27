@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo', // Use standard model name
+        model: 'glm-4.6:free', // Routeway.ai free model
         messages: [
           {
             role: 'system',
