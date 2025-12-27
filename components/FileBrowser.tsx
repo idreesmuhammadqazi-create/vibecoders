@@ -20,11 +20,15 @@ export default function FileBrowser({ repo, onFunctionSelect }: FileBrowserProps
         const response = await fetch(`/api/repos/${owner}/${repoName}/files`)
         const fileTree = await response.json()
 
-        // Filter for code files
+        // Filter for code files (exclude API routes and config files)
         const codeFiles = fileTree
           .filter((file: any) => 
             file.type === 'blob' && 
-            /\.(ts|tsx|js|jsx)$/.test(file.path)
+            /\.(ts|tsx|js|jsx)$/.test(file.path) &&
+            !file.path.includes('/api/') && // Exclude API routes
+            !file.path.includes('route.ts') && // Exclude Next.js route files
+            !file.path.includes('layout.') && // Exclude layout files
+            !file.path.includes('page.') // Exclude page files
           )
           .map((file: any) => file.path)
 

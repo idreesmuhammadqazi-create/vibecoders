@@ -25,10 +25,18 @@ export default function FunctionDetails({ function: func }: FunctionDetailsProps
         if (fileResponse.ok) {
           const fileContent = await fileResponse.text()
           // Try to extract the actual function code
-          const funcRegex = new RegExp(`(?:export\\s+)?(?:async\\s+)?function\\s+${func.name}\\s*\\([^)]*\\)\\s*\\{[^}]*\\}|(?:const|let|var)\\s+${func.name}\\s*=\\s*[^;]+;`, 's')
-          const match = fileContent.match(funcRegex)
-          if (match) {
-            code = match[0].substring(0, 500) // Limit to 500 chars
+          const patterns = [
+            new RegExp(`(?:export\\s+)?(?:async\\s+)?function\\s+${func.name}\\s*\\([^)]*\\)\\s*\\{[^}]*\\}`, 's'),
+            new RegExp(`(?:const|let|var)\\s+${func.name}\\s*=\\s*(?:async\\s*)?\\([^)]*\\)\\s*=>\\s*\\{[^}]*\\}`, 's'),
+            new RegExp(`(?:const|let|var)\\s+${func.name}\\s*=\\s*(?:async\\s*)?\\([^)]*\\)\\s*=>\\s*[^;]+;`, 's'),
+          ]
+          
+          for (const pattern of patterns) {
+            const match = fileContent.match(pattern)
+            if (match) {
+              code = match[0].substring(0, 800) // Limit to 800 chars
+              break
+            }
           }
         }
 
