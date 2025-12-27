@@ -37,16 +37,6 @@ export async function GET(request: NextRequest) {
 
     const accessToken = tokenData.access_token
 
-    // Get user info
-    const userResponse = await fetch('https://api.github.com/user', {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Accept': 'application/vnd.github.v3+json',
-      },
-    })
-
-    const userData = await userResponse.json()
-
     // Create response with token in cookie
     const response = NextResponse.redirect(new URL('/dashboard', request.url))
     response.cookies.set('github_token', accessToken, {
