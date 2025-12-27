@@ -3,7 +3,6 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "nodeVersion": "18.x",
   "env": {
     "GITHUB_CLIENT_ID": {
       "description": "GitHub OAuth Client ID"
