@@ -34,15 +34,15 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Call OpenAI API
-    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Call Routeway.ai API
+    const routewayResponse = await fetch('https://api.routeway.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${process.env.ROUTEWAY_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
+        model: 'glm-4.6:free',
         messages: [
           {
             role: 'system',
@@ -58,12 +58,13 @@ export async function POST(request: NextRequest) {
       }),
     })
 
-    if (!openaiResponse.ok) {
-      throw new Error('OpenAI API error')
+    if (!routewayResponse.ok) {
+      const errorData = await routewayResponse.json()
+      throw new Error(`Routeway.ai API error: ${errorData.error?.message || 'Unknown error'}`)
     }
 
-    const openaiData = await openaiResponse.json()
-    const explanation = openaiData.choices[0].message.content
+    const routewayData = await routewayResponse.json()
+    const explanation = routewayData.choices[0].message.content
 
     const result = {
       functionName,

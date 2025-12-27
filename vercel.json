@@ -14,8 +14,8 @@
     "GITHUB_TOKEN": {
       "description": "GitHub Personal Access Token"
     },
-    "OPENAI_API_KEY": {
-      "description": "OpenAI API Key"
+    "ROUTEWAY_API_KEY": {
+      "description": "Routeway.ai API Key (for code explanations using glm-4.6:free model)"
     },
     "NEXTAUTH_SECRET": {
       "description": "NextAuth Secret (generate with: openssl rand -base64 32)"
