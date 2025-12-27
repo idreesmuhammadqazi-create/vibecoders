@@ -32,8 +32,10 @@ export default function FileBrowser({ repo, onFunctionSelect }: FileBrowserProps
 
         // Fetch and parse actual file contents
         const allFunctions: CodeFunction[] = []
+        const MAX_FILES = 50 // Configurable limit
+        const MAX_FUNCTIONS_PER_FILE = 10 // Configurable limit
         
-        for (const filePath of codeFiles.slice(0, 10)) {
+        for (const filePath of codeFiles.slice(0, MAX_FILES)) {
           try {
             const fileResponse = await fetch(`/api/repos/${owner}/${repoName}/file?path=${encodeURIComponent(filePath)}`)
             if (!fileResponse.ok) continue
@@ -57,7 +59,7 @@ export default function FileBrowser({ repo, onFunctionSelect }: FileBrowserProps
                   params: [],
                 })
                 matchIndex++
-                if (matchIndex >= 3) break // Limit to 3 functions per file
+                if (matchIndex >= MAX_FUNCTIONS_PER_FILE) break
               }
             }
           } catch (error) {
