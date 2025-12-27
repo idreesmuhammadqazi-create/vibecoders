@@ -13,6 +13,17 @@ export async function GET(request: NextRequest) {
 
   try {
     // Exchange code for access token
+    const clientId = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID
+    const clientSecret = process.env.GITHUB_CLIENT_SECRET
+
+    if (!clientId || !clientSecret) {
+      console.error('Missing GitHub credentials:', { clientId: !!clientId, clientSecret: !!clientSecret })
+      return NextResponse.json(
+        { error: 'Server configuration error: Missing GitHub credentials' },
+        { status: 500 }
+      )
+    }
+
     const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
       method: 'POST',
       headers: {
@@ -20,8 +31,8 @@ export async function GET(request: NextRequest) {
         'Accept': 'application/json',
       },
       body: JSON.stringify({
-        client_id: process.env.GITHUB_CLIENT_ID,
-        client_secret: process.env.GITHUB_CLIENT_SECRET,
+        client_id: clientId,
+        client_secret: clientSecret,
         code,
       }),
     })
@@ -29,6 +40,7 @@ export async function GET(request: NextRequest) {
     const tokenData = await tokenResponse.json()
 
     if (tokenData.error) {
+      console.error('GitHub token error:', tokenData)
       return NextResponse.json(
         { error: tokenData.error_description || 'Failed to get access token' },
         { status: 400 }
