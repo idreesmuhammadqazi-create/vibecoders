@@ -3,25 +3,6 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "env": {
-    "GITHUB_CLIENT_ID": {
-      "description": "GitHub OAuth Client ID"
-    },
-    "GITHUB_CLIENT_SECRET": {
-      "description": "GitHub OAuth Client Secret"
-    },
-    "GITHUB_TOKEN": {
-      "description": "GitHub Personal Access Token"
-    },
-    "ROUTEWAY_API_KEY": {
-      "description": "Routeway.ai API Key (for code explanations using glm-4.6:free model)"
-    },
-    "NEXTAUTH_SECRET": {
-      "description": "NextAuth Secret (generate with: openssl rand -base64 32)"
-    },
-    "NEXTAUTH_URL": {
-      "description": "Your Vercel deployment URL (e.g., https://vibecoders.vercel.app)"
-    }
   },
   "regions": ["iad1"],
   "functions": {
