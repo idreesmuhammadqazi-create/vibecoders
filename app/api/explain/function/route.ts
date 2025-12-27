@@ -37,90 +37,125 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    const apiKey = process.env.ROUTEWAY_API_KEY
+    let explanation = ''
+    let usedApi = ''
 
-    if (!apiKey) {
+    // Try Routeway.ai first
+    if (process.env.ROUTEWAY_API_KEY) {
+      console.log('Trying Routeway.ai API...')
+      try {
+        const routewayResponse = await fetch('https://api.routeway.ai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.ROUTEWAY_API_KEY}`,
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          },
+          body: JSON.stringify({
+            model: 'glm-4.6:free',
+            messages: [
+              {
+                role: 'system',
+                content: 'You are a helpful code explanation expert. Explain code clearly and concisely in 2-3 sentences.',
+              },
+              {
+                role: 'user',
+                content: `Explain what this function does:\n\n${code}\n\nFunction name: ${functionName}\nContext: ${context || 'N/A'}`,
+              },
+            ],
+            temperature: 0.7,
+            max_tokens: 300,
+          }),
+        })
+
+        console.log('Routeway.ai response status:', routewayResponse.status)
+
+        if (routewayResponse.ok) {
+          const responseData = await routewayResponse.json()
+          if (responseData.choices && responseData.choices[0] && responseData.choices[0].message) {
+            explanation = responseData.choices[0].message.content
+            usedApi = 'routeway'
+            console.log('Routeway.ai success')
+          }
+        } else {
+          const contentType = routewayResponse.headers.get('content-type')
+          if (contentType?.includes('application/json')) {
+            const errorData = await routewayResponse.json()
+            console.error('Routeway.ai JSON error:', errorData)
+          } else {
+            const text = await routewayResponse.text()
+            console.error('Routeway.ai HTML error (likely Cloudflare):', text.substring(0, 100))
+          }
+        }
+      } catch (error) {
+        console.error('Routeway.ai fetch error:', error)
+      }
+    }
+
+    // Fallback to OpenAI if Routeway.ai failed
+    if (!explanation && process.env.OPENAI_API_KEY) {
+      console.log('Falling back to OpenAI API...')
+      try {
+        const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model: 'gpt-3.5-turbo',
+            messages: [
+              {
+                role: 'system',
+                content: 'You are a helpful code explanation expert. Explain code clearly and concisely in 2-3 sentences.',
+              },
+              {
+                role: 'user',
+                content: `Explain what this function does:\n\n${code}\n\nFunction name: ${functionName}\nContext: ${context || 'N/A'}`,
+              },
+            ],
+            temperature: 0.7,
+            max_tokens: 300,
+          }),
+        })
+
+        console.log('OpenAI response status:', openaiResponse.status)
+
+        if (openaiResponse.ok) {
+          const responseData = await openaiResponse.json()
+          if (responseData.choices && responseData.choices[0] && responseData.choices[0].message) {
+            explanation = responseData.choices[0].message.content
+            usedApi = 'openai'
+            console.log('OpenAI success')
+          }
+        } else {
+          const errorText = await openaiResponse.text()
+          console.error('OpenAI error:', errorText.substring(0, 200))
+        }
+      } catch (error) {
+        console.error('OpenAI fetch error:', error)
+      }
+    }
+
+    // If still no explanation, return error
+    if (!explanation) {
       return NextResponse.json(
-        { error: 'API key not configured' },
+        { error: 'Failed to get explanation from both Routeway.ai and OpenAI. Please check your API keys.' },
         { status: 500 }
       )
-    }
-
-    console.log('Calling Routeway.ai API...')
-
-    // Call Routeway.ai API with correct format
-    const routewayResponse = await fetch('https://api.routeway.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'glm-4.6:free', // Routeway.ai free model
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a helpful code explanation expert. Explain code clearly and concisely in 2-3 sentences.',
-          },
-          {
-            role: 'user',
-            content: `Explain what this function does:\n\n${code}\n\nFunction name: ${functionName}\nContext: ${context || 'N/A'}`,
-          },
-        ],
-        temperature: 0.7,
-        max_tokens: 300,
-      }),
-    })
-
-    console.log('Routeway.ai response status:', routewayResponse.status)
-
-    // Check if response is OK
-    if (!routewayResponse.ok) {
-      const contentType = routewayResponse.headers.get('content-type')
-      let errorMessage = `HTTP ${routewayResponse.status}`
-
-      if (contentType?.includes('application/json')) {
-        try {
-          const errorData = await routewayResponse.json()
-          errorMessage = errorData.error?.message || JSON.stringify(errorData)
-        } catch (e) {
-          const text = await routewayResponse.text()
-          errorMessage = text.substring(0, 200)
-        }
-      } else {
-        const text = await routewayResponse.text()
-        errorMessage = text.substring(0, 200)
-      }
-
-      console.error('Routeway.ai error:', errorMessage)
-      throw new Error(`Routeway.ai API failed: ${errorMessage}`)
-    }
-
-    // Parse response
-    const responseData = await routewayResponse.json()
-    console.log('Routeway.ai response received')
-
-    if (!responseData.choices || !responseData.choices[0] || !responseData.choices[0].message) {
-      console.error('Invalid response structure:', responseData)
-      throw new Error('Invalid response from Routeway.ai: missing choices or message')
-    }
-
-    const explanation = responseData.choices[0].message.content
-
-    if (!explanation) {
-      throw new Error('Empty explanation from Routeway.ai')
     }
 
     const result = {
       functionName,
       how: explanation,
       timestamp: Date.now(),
+      usedApi,
     }
 
     // Cache the result
     cacheManager.set(cacheKey, result)
 
-    console.log('Explanation generated successfully')
+    console.log('Explanation generated successfully using:', usedApi)
 
     return NextResponse.json({
       ...result,
