@@ -9,7 +9,6 @@ interface FunctionDetailsProps {
 
 export default function FunctionDetails({ function: func }: FunctionDetailsProps) {
   const [explanation, setExplanation] = useState<string>('')
-  const [usage, setUsage] = useState<string>('')
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'how' | 'where'>('how')
 
@@ -90,7 +89,7 @@ export default function FunctionDetails({ function: func }: FunctionDetailsProps
           </div>
         ) : (
           <div className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap">
-            {activeTab === 'how' ? explanation : usage || 'No usage information available'}
+            {activeTab === 'how' ? explanation : 'No usage information available'}
           </div>
         )}
       </div>

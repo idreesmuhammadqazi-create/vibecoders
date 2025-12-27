@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { Repository, CodeFunction } from '@/lib/types'
-import { CodeParser } from '@/lib/codeParser'
 
 interface FileBrowserProps {
   repo: Repository
@@ -10,10 +9,8 @@ interface FileBrowserProps {
 }
 
 export default function FileBrowser({ repo, onFunctionSelect }: FileBrowserProps) {
-  const [files, setFiles] = useState<string[]>([])
   const [functions, setFunctions] = useState<CodeFunction[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const fetchAndParseFiles = async () => {
@@ -30,11 +27,9 @@ export default function FileBrowser({ repo, onFunctionSelect }: FileBrowserProps
           )
           .map((file: any) => file.path)
 
-        setFiles(codeFiles)
-
         // TODO: Fetch and parse actual file contents
         // For now, we'll show placeholder functions
-        const placeholderFunctions: CodeFunction[] = codeFiles.slice(0, 5).map((file, idx) => ({
+        const placeholderFunctions: CodeFunction[] = codeFiles.slice(0, 5).map((file: string, idx: number) => ({
           id: `${file}:func${idx}`,
           name: `function${idx}`,
           file,
@@ -54,16 +49,6 @@ export default function FileBrowser({ repo, onFunctionSelect }: FileBrowserProps
 
     fetchAndParseFiles()
   }, [repo])
-
-  const toggleFolder = (folder: string) => {
-    const newExpanded = new Set(expandedFolders)
-    if (newExpanded.has(folder)) {
-      newExpanded.delete(folder)
-    } else {
-      newExpanded.add(folder)
-    }
-    setExpandedFolders(newExpanded)
-  }
 
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">

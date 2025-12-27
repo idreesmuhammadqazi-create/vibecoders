@@ -10,8 +10,6 @@ export class CodeParser {
     const functionPattern = /(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\((.*?)\)/g
     // Arrow function pattern
     const arrowPattern = /(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?\((.*?)\)\s*=>/g
-    // Class method pattern
-    const methodPattern = /(?:public|private|protected)?\s*(?:async\s+)?(\w+)\s*\((.*?)\)\s*{/g
 
     let match
 
@@ -55,7 +53,7 @@ export class CodeParser {
   }
 
   // Extract imports/dependencies
-  static extractDependencies(code: string, filePath: string): { imports: string[]; exports: string[] } {
+  static extractDependencies(code: string): { imports: string[]; exports: string[] } {
     const imports: string[] = []
     const exports: string[] = []
 
@@ -64,7 +62,6 @@ export class CodeParser {
     let match
 
     while ((match = importPattern.exec(code)) !== null) {
-      const imported = match[1] || match[2]
       const source = match[3]
       imports.push(source)
     }
