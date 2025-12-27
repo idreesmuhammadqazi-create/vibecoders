@@ -27,37 +27,17 @@ export default function FunctionDetails({ function: func }: FunctionDetailsProps
           console.log('File content length:', fileContent.length)
           console.log('Looking for function:', func.name)
           
-          // Try to extract the actual function/component code
-          const patterns = [
-            // Function declarations
-            new RegExp(`(?:export\\s+)?(?:async\\s+)?function\\s+${func.name}\\s*\\([^)]*\\)\\s*\\{[\\s\\S]*?\\n\\}`, 's'),
-            // Arrow functions with braces
-            new RegExp(`(?:const|let|var)\\s+${func.name}\\s*=\\s*(?:async\\s*)?\\([^)]*\\)\\s*=>\\s*\\{[\\s\\S]*?\\n\\}`, 's'),
-            // Arrow functions without braces
-            new RegExp(`(?:const|let|var)\\s+${func.name}\\s*=\\s*(?:async\\s*)?\\([^)]*\\)\\s*=>\\s*[^;]+;`, 's'),
-            // React components (export default)
-            new RegExp(`export\\s+default\\s+function\\s+${func.name}\\s*\\([^)]*\\)\\s*\\{[\\s\\S]*?\\n\\}`, 's'),
-            // Simpler pattern - just find the function name and grab next 500 chars
-            new RegExp(`${func.name}\\s*[=:]\\s*[^{]*\\{[\\s\\S]{0,500}`, 's'),
-          ]
-          
-          for (const pattern of patterns) {
-            const match = fileContent.match(pattern)
-            if (match) {
-              code = match[0].substring(0, 1200) // Limit to 1200 chars
-              console.log('Matched pattern, code length:', code.length)
-              break
-            }
+          // Simple approach: find the function name and grab surrounding code
+          const funcIndex = fileContent.indexOf(func.name)
+          if (funcIndex !== -1) {
+            // Get 200 chars before and 800 chars after
+            const start = Math.max(0, funcIndex - 200)
+            const end = Math.min(fileContent.length, funcIndex + 800)
+            code = fileContent.substring(start, end)
+            console.log('Extracted code length:', code.length)
           }
-          
-          // If still no match, just grab a chunk around the function name
-          if (code.includes('/* implementation */')) {
-            const idx = fileContent.indexOf(func.name)
-            if (idx !== -1) {
-              code = fileContent.substring(idx, idx + 1000)
-              console.log('Using fallback extraction, code length:', code.length)
-            }
-          }
+        } else {
+          console.error('File fetch failed:', fileResponse.status)
         }
 
         console.log('Sending to Routeway.ai:', { functionName: func.name, codeLength: code.length })
@@ -68,13 +48,20 @@ export default function FunctionDetails({ function: func }: FunctionDetailsProps
           body: JSON.stringify({
             functionName: func.name,
             code,
-            context: `Located in ${func.file} at line ${func.line}`,
+            context: `Located in ${func.file}`,
           }),
         })
 
         const data = await response.json()
         console.log('Routeway.ai response:', data)
-        setExplanation(data.how || data.error || 'No explanation available')
+        
+        if (data.how) {
+          setExplanation(data.how)
+        } else if (data.error) {
+          setExplanation(`Error: ${data.error}`)
+        } else {
+          setExplanation('No explanation available')
+        }
       } catch (error) {
         console.error('Error fetching explanation:', error)
         setExplanation(`Failed to load explanation: ${error}`)

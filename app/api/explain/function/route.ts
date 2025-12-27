@@ -89,9 +89,10 @@ export async function POST(request: NextRequest) {
       cached: false,
     })
   } catch (error) {
-    console.error('Explanation error:', error)
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    console.error('Explanation error:', errorMessage)
     return NextResponse.json(
-      { error: 'Failed to generate explanation' },
+      { error: `Failed to generate explanation: ${errorMessage}` },
       { status: 500 }
     )
   }
