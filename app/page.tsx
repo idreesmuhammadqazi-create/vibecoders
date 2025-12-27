@@ -1,11 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { useState } from 'react'
 
 export default function Home() {
-  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
 
   const handleGitHubLogin = async () => {
