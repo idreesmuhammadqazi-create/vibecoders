@@ -16,21 +16,40 @@ export default function FunctionDetails({ function: func }: FunctionDetailsProps
     const fetchExplanation = async () => {
       setIsLoading(true)
       try {
+        // First, fetch the actual file content
+        const [owner, repo] = func.file.split('/').slice(0, 2)
+        const fileResponse = await fetch(`/api/repos/${owner}/${repo}/file?path=${encodeURIComponent(func.file)}`)
+        
+        let code = `function ${func.name}(${func.params.join(', ')}) { /* implementation */ }`
+        
+        if (fileResponse.ok) {
+          const fileContent = await fileResponse.text()
+          // Try to extract the actual function code
+          const funcRegex = new RegExp(`(?:export\\s+)?(?:async\\s+)?function\\s+${func.name}\\s*\\([^)]*\\)\\s*\\{[^}]*\\}|(?:const|let|var)\\s+${func.name}\\s*=\\s*[^;]+;`, 's')
+          const match = fileContent.match(funcRegex)
+          if (match) {
+            code = match[0].substring(0, 500) // Limit to 500 chars
+          }
+        }
+
+        console.log('Sending to Routeway.ai:', { functionName: func.name, codeLength: code.length })
+
         const response = await fetch('/api/explain/function', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             functionName: func.name,
-            code: `function ${func.name}(${func.params.join(', ')}) { /* implementation */ }`,
+            code,
             context: `Located in ${func.file} at line ${func.line}`,
           }),
         })
 
         const data = await response.json()
-        setExplanation(data.how || 'No explanation available')
+        console.log('Routeway.ai response:', data)
+        setExplanation(data.how || data.error || 'No explanation available')
       } catch (error) {
         console.error('Error fetching explanation:', error)
-        setExplanation('Failed to load explanation')
+        setExplanation(`Failed to load explanation: ${error}`)
       } finally {
         setIsLoading(false)
       }

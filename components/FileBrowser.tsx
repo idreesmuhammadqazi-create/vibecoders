@@ -16,30 +16,57 @@ export default function FileBrowser({ repo, onFunctionSelect }: FileBrowserProps
     const fetchAndParseFiles = async () => {
       setIsLoading(true)
       try {
-        const response = await fetch(`/api/repos/${repo.full_name.split('/')[0]}/${repo.name}/files`)
+        const [owner, repoName] = repo.full_name.split('/')
+        const response = await fetch(`/api/repos/${owner}/${repoName}/files`)
         const fileTree = await response.json()
 
         // Filter for code files
         const codeFiles = fileTree
           .filter((file: any) => 
             file.type === 'blob' && 
-            /\.(ts|tsx|js|jsx|py|java|go|rs)$/.test(file.path)
+            /\.(ts|tsx|js|jsx)$/.test(file.path)
           )
           .map((file: any) => file.path)
 
-        // TODO: Fetch and parse actual file contents
-        // For now, we'll show placeholder functions
-        const placeholderFunctions: CodeFunction[] = codeFiles.slice(0, 5).map((file: string, idx: number) => ({
-          id: `${file}:func${idx}`,
-          name: `function${idx}`,
-          file,
-          line: 1,
-          type: 'function',
-          signature: `function function${idx}()`,
-          params: [],
-        }))
+        console.log('Found code files:', codeFiles)
 
-        setFunctions(placeholderFunctions)
+        // Fetch and parse actual file contents
+        const allFunctions: CodeFunction[] = []
+        
+        for (const filePath of codeFiles.slice(0, 10)) {
+          try {
+            const fileResponse = await fetch(`/api/repos/${owner}/${repoName}/file?path=${encodeURIComponent(filePath)}`)
+            if (!fileResponse.ok) continue
+            
+            const fileContent = await fileResponse.text()
+            
+            // Simple regex to find function names
+            const functionMatches = fileContent.matchAll(/(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\(|(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?\(/g)
+            
+            let matchIndex = 0
+            for (const match of functionMatches) {
+              const funcName = match[1] || match[2]
+              if (funcName) {
+                allFunctions.push({
+                  id: `${filePath}:${funcName}`,
+                  name: funcName,
+                  file: filePath,
+                  line: 1,
+                  type: 'function',
+                  signature: `function ${funcName}()`,
+                  params: [],
+                })
+                matchIndex++
+                if (matchIndex >= 3) break // Limit to 3 functions per file
+              }
+            }
+          } catch (error) {
+            console.error(`Error fetching file ${filePath}:`, error)
+          }
+        }
+
+        console.log('Parsed functions:', allFunctions)
+        setFunctions(allFunctions.length > 0 ? allFunctions : [])
       } catch (error) {
         console.error('Error fetching files:', error)
       } finally {
