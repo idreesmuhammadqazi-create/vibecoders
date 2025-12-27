@@ -17,6 +17,8 @@ export async function GET(
     const { owner, repo } = params
     const path = request.nextUrl.searchParams.get('path')
 
+    console.log('File fetch request:', { owner, repo, path })
+
     if (!path) {
       return NextResponse.json(
         { error: 'Missing path parameter' },
@@ -25,21 +27,27 @@ export async function GET(
     }
 
     // Get file content from GitHub
-    const response = await fetch(
-      `https://api.github.com/repos/${owner}/${repo}/contents/${path}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/vnd.github.v3.raw',
-        },
-      }
-    )
+    const githubUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`
+    console.log('GitHub URL:', githubUrl)
+
+    const response = await fetch(githubUrl, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github.v3.raw',
+      },
+    })
+
+    console.log('GitHub response status:', response.status)
 
     if (!response.ok) {
+      const errorText = await response.text()
+      console.error('GitHub error:', errorText)
       throw new Error(`Failed to fetch file: ${response.statusText}`)
     }
 
     const content = await response.text()
+    console.log('File content length:', content.length)
+    
     return new NextResponse(content, {
       headers: {
         'Content-Type': 'text/plain',
@@ -48,7 +56,7 @@ export async function GET(
   } catch (error) {
     console.error('File fetch error:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch file' },
+      { error: `Failed to fetch file: ${error}` },
       { status: 500 }
     )
   }

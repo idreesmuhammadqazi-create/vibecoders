@@ -62,10 +62,17 @@ export async function POST(request: NextRequest) {
 
     if (!routewayResponse.ok) {
       const errorData = await routewayResponse.json()
-      throw new Error(`Routeway.ai API error: ${errorData.error?.message || 'Unknown error'}`)
+      console.error('Routeway.ai error response:', errorData)
+      throw new Error(`Routeway.ai API error: ${errorData.error?.message || JSON.stringify(errorData)}`)
     }
 
     const routewayData = await routewayResponse.json()
+    console.log('Routeway.ai success response:', { choices: routewayData.choices?.length })
+    
+    if (!routewayData.choices || !routewayData.choices[0]) {
+      throw new Error('Invalid response from Routeway.ai: no choices')
+    }
+
     const explanation = routewayData.choices[0].message.content
 
     const result = {
