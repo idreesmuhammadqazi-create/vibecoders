@@ -10,47 +10,61 @@ interface FunctionDetailsProps {
 export default function FunctionDetails({ function: func }: FunctionDetailsProps) {
   const [explanation, setExplanation] = useState<string>('')
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string>('')
   const [activeTab, setActiveTab] = useState<'how' | 'where'>('how')
 
   useEffect(() => {
     const fetchExplanation = async () => {
       setIsLoading(true)
+      setError('')
       try {
-        // For now, just send the function name and file info
-        // We'll use a simple placeholder code since file fetching is complex
-        const code = `// Function: ${func.name}
+        // Build comprehensive code context
+        const codeContext = `
+// Function: ${func.name}
 // File: ${func.file}
-// This function is used in the codebase.
+// Type: ${func.type}
 // Parameters: ${func.params.length > 0 ? func.params.join(', ') : 'none'}
-export function ${func.name}() {
-  // Implementation details
-}`
 
-        console.log('Sending to Routeway.ai:', { functionName: func.name, codeLength: code.length })
+export function ${func.name}(${func.params.length > 0 ? func.params.join(', ') : ''}) {
+  // This is a ${func.type} in the codebase
+  // It is located at line ${func.line} in ${func.file}
+  // Implementation details would be here
+}
+`.trim()
+
+        console.log('📤 Sending to Routeway.ai:', {
+          functionName: func.name,
+          codeLength: codeContext.length,
+          file: func.file,
+        })
 
         const response = await fetch('/api/explain/function', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             functionName: func.name,
-            code,
-            context: `Located in ${func.file}`,
+            code: codeContext,
+            context: `Located in ${func.file} at line ${func.line}. Type: ${func.type}`,
           }),
         })
 
         const data = await response.json()
-        console.log('Routeway.ai response:', data)
-        
+        console.log('📥 Routeway.ai response:', data)
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to get explanation')
+        }
+
         if (data.how) {
           setExplanation(data.how)
-        } else if (data.error) {
-          setExplanation(`Error: ${data.error}`)
         } else {
-          setExplanation('No explanation available')
+          throw new Error('No explanation in response')
         }
       } catch (error) {
-        console.error('Error fetching explanation:', error)
-        setExplanation(`Failed to load explanation: ${error}`)
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        console.error('❌ Error fetching explanation:', errorMessage)
+        setError(errorMessage)
+        setExplanation('')
       } finally {
         setIsLoading(false)
       }
@@ -104,12 +118,19 @@ export function ${func.name}() {
           <div className="flex items-center justify-center h-48">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
-              <p className="text-gray-400 text-sm">Loading explanation...</p>
+              <p className="text-gray-400 text-sm">Loading explanation from Routeway.ai...</p>
             </div>
+          </div>
+        ) : error ? (
+          <div className="text-red-400 text-sm">
+            <p className="font-semibold mb-2">Error:</p>
+            <p>{error}</p>
           </div>
         ) : (
           <div className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap">
-            {activeTab === 'how' ? explanation : 'No usage information available'}
+            {activeTab === 'how' 
+              ? explanation || 'No explanation available'
+              : 'Where It\'s Used feature coming soon'}
           </div>
         )}
       </div>

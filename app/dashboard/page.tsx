@@ -13,6 +13,7 @@ export default function Dashboard() {
   const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null)
   const [selectedFunction, setSelectedFunction] = useState<CodeFunction | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string>('')
 
   useEffect(() => {
     // Check if user is authenticated
@@ -32,19 +33,19 @@ export default function Dashboard() {
   }, [router])
 
   const handleRepoSelect = async (repo: Repository) => {
+    console.log('📦 Repository selected:', repo.name)
     setSelectedRepo(repo)
     setSelectedFunction(null)
     setIsLoading(true)
+    setError('')
 
     try {
-      // Fetch repository files and parse code
-      const response = await fetch(`/api/repos/${repo.full_name.split('/')[0]}/${repo.name}/files`)
-      await response.json()
-
-      // TODO: Parse files and extract functions
-      // For now, we'll show a placeholder
+      // The FileBrowser component will handle fetching files
+      // We just need to set the repo
     } catch (error) {
-      console.error('Error fetching repo files:', error)
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      console.error('Error selecting repo:', errorMessage)
+      setError(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -52,14 +53,31 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-dark text-light">
+      {/* Header */}
       <header className="border-b border-gray-800 bg-gray-900 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold">VibeCoders</h1>
-          <p className="text-sm text-gray-400">Understand your code</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">VibeCoders</h1>
+              <p className="text-sm text-gray-400">Understand your code with AI</p>
+            </div>
+            {selectedRepo && (
+              <div className="text-right">
+                <p className="text-sm font-medium">{selectedRepo.name}</p>
+                <p className="text-xs text-gray-400">{selectedRepo.full_name}</p>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
+        {error && (
+          <div className="mb-6 p-4 bg-red-900 border border-red-700 rounded-lg">
+            <p className="text-red-200 text-sm">{error}</p>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Left Sidebar - Repo & File Browser */}
           <div className="lg:col-span-1 space-y-6">
@@ -84,15 +102,21 @@ export default function Dashboard() {
               <>
                 {/* Dependency Graph */}
                 <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-                  <h2 className="text-xl font-semibold mb-4">Dependency Graph</h2>
+                  <h2 className="text-xl font-semibold mb-4">Repository Overview</h2>
                   <DependencyGraph repo={selectedRepo} />
                 </div>
 
                 {/* Function Details */}
                 {selectedFunction && (
                   <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-                    <h2 className="text-xl font-semibold mb-4">Function Details</h2>
+                    <h2 className="text-xl font-semibold mb-4">Function Analysis</h2>
                     <FunctionDetails function={selectedFunction} />
+                  </div>
+                )}
+
+                {!selectedFunction && (
+                  <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 text-center">
+                    <p className="text-gray-400">Select a function from the list to see detailed analysis</p>
                   </div>
                 )}
               </>
