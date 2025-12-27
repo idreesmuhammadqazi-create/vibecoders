@@ -24,17 +24,22 @@ export default function FunctionDetails({ function: func }: FunctionDetailsProps
         
         if (fileResponse.ok) {
           const fileContent = await fileResponse.text()
-          // Try to extract the actual function code
+          // Try to extract the actual function/component code
           const patterns = [
-            new RegExp(`(?:export\\s+)?(?:async\\s+)?function\\s+${func.name}\\s*\\([^)]*\\)\\s*\\{[^}]*\\}`, 's'),
-            new RegExp(`(?:const|let|var)\\s+${func.name}\\s*=\\s*(?:async\\s*)?\\([^)]*\\)\\s*=>\\s*\\{[^}]*\\}`, 's'),
+            // Function declarations
+            new RegExp(`(?:export\\s+)?(?:async\\s+)?function\\s+${func.name}\\s*\\([^)]*\\)\\s*\\{[\\s\\S]*?\\n\\}`, 's'),
+            // Arrow functions with braces
+            new RegExp(`(?:const|let|var)\\s+${func.name}\\s*=\\s*(?:async\\s*)?\\([^)]*\\)\\s*=>\\s*\\{[\\s\\S]*?\\n\\}`, 's'),
+            // Arrow functions without braces
             new RegExp(`(?:const|let|var)\\s+${func.name}\\s*=\\s*(?:async\\s*)?\\([^)]*\\)\\s*=>\\s*[^;]+;`, 's'),
+            // React components (export default)
+            new RegExp(`export\\s+default\\s+function\\s+${func.name}\\s*\\([^)]*\\)\\s*\\{[\\s\\S]*?\\n\\}`, 's'),
           ]
           
           for (const pattern of patterns) {
             const match = fileContent.match(pattern)
             if (match) {
-              code = match[0].substring(0, 800) // Limit to 800 chars
+              code = match[0].substring(0, 1200) // Limit to 1200 chars
               break
             }
           }

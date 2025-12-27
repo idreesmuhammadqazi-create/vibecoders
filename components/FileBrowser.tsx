@@ -46,8 +46,9 @@ export default function FileBrowser({ repo, onFunctionSelect }: FileBrowserProps
             
             const fileContent = await fileResponse.text()
             
-            // Simple regex to find function names
-            const functionMatches = fileContent.matchAll(/(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\(|(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?\(/g)
+            // Regex to find function and component names
+            // Matches: function Name(), const Name = (), export default function Name()
+            const functionMatches = fileContent.matchAll(/(?:export\s+(?:default\s+)?)?(?:async\s+)?function\s+(\w+)\s*\(|(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?(?:\(|function)/g)
             
             let matchIndex = 0
             for (const match of functionMatches) {
