@@ -16,6 +16,8 @@ export async function POST(request: NextRequest) {
   try {
     const { functionName, code, context } = await request.json()
 
+    console.log('Explain function request:', { functionName, codeLength: code?.length, context })
+
     if (!functionName || !code) {
       return NextResponse.json(
         { error: 'Missing required fields' },

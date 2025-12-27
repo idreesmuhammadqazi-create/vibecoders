@@ -24,6 +24,9 @@ export default function FunctionDetails({ function: func }: FunctionDetailsProps
         
         if (fileResponse.ok) {
           const fileContent = await fileResponse.text()
+          console.log('File content length:', fileContent.length)
+          console.log('Looking for function:', func.name)
+          
           // Try to extract the actual function/component code
           const patterns = [
             // Function declarations
@@ -34,13 +37,25 @@ export default function FunctionDetails({ function: func }: FunctionDetailsProps
             new RegExp(`(?:const|let|var)\\s+${func.name}\\s*=\\s*(?:async\\s*)?\\([^)]*\\)\\s*=>\\s*[^;]+;`, 's'),
             // React components (export default)
             new RegExp(`export\\s+default\\s+function\\s+${func.name}\\s*\\([^)]*\\)\\s*\\{[\\s\\S]*?\\n\\}`, 's'),
+            // Simpler pattern - just find the function name and grab next 500 chars
+            new RegExp(`${func.name}\\s*[=:]\\s*[^{]*\\{[\\s\\S]{0,500}`, 's'),
           ]
           
           for (const pattern of patterns) {
             const match = fileContent.match(pattern)
             if (match) {
               code = match[0].substring(0, 1200) // Limit to 1200 chars
+              console.log('Matched pattern, code length:', code.length)
               break
+            }
+          }
+          
+          // If still no match, just grab a chunk around the function name
+          if (code.includes('/* implementation */')) {
+            const idx = fileContent.indexOf(func.name)
+            if (idx !== -1) {
+              code = fileContent.substring(idx, idx + 1000)
+              console.log('Using fallback extraction, code length:', code.length)
             }
           }
         }
