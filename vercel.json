@@ -1,0 +1,33 @@
+{
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "nodeVersion": "18.x",
+  "env": {
+    "GITHUB_CLIENT_ID": {
+      "description": "GitHub OAuth Client ID"
+    },
+    "GITHUB_CLIENT_SECRET": {
+      "description": "GitHub OAuth Client Secret"
+    },
+    "GITHUB_TOKEN": {
+      "description": "GitHub Personal Access Token"
+    },
+    "OPENAI_API_KEY": {
+      "description": "OpenAI API Key"
+    },
+    "NEXTAUTH_SECRET": {
+      "description": "NextAuth Secret (generate with: openssl rand -base64 32)"
+    },
+    "NEXTAUTH_URL": {
+      "description": "Your Vercel deployment URL (e.g., https://vibecoders.vercel.app)"
+    }
+  },
+  "regions": ["iad1"],
+  "functions": {
+    "api/**/*.ts": {
+      "maxDuration": 60
+    }
+  }
+}
